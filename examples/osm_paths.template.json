@@ -1,0 +1,9 @@
+{
+  "vehicle_paths": {
+    "vehicle_straight": ["REPLACE_WITH_CONNECTED_EDGE_IDS"],
+    "vehicle_turn": ["REPLACE_WITH_CONNECTED_EDGE_IDS"]
+  },
+  "pedestrian_paths": {
+    "pedestrian_crossing": ["REPLACE_WITH_CONNECTED_WALK_EDGE_IDS"]
+  }
+}

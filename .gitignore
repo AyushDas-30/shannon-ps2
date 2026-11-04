@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.pt
+*.onnx
+*.mp4
+*.avi
+*.mov
+*.mkv
+outputs/work/
+outputs/private/
+outputs/runs/*/evidence_raw/
+*.log
+/ps/Screenshot (553).png
