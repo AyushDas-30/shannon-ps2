@@ -1,0 +1,4 @@
+# Full local install: dashboard + offline pipeline (detector, tracker, SUMO, PDF).
+# Use Python 3.11 or 3.12. On CPU-only machines, install torch/torchvision first:
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+.[pipeline]

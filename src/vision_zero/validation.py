@@ -48,6 +48,8 @@ def compare_sources(points: list[TrackPoint], *, max_ttc_s: float = 3.0) -> dict
     reference = detect_ttc_events(metric(groups.get("sumo_gt", [])), max_ttc_s=max_ttc_s)
     result = {"ground_truth_event_count": len(reference), "comparisons": {}}
     for source_type in ("sumo_detected", "video"):
+        if not groups.get(source_type):
+            continue  # no tracks from this source in the run: nothing to compare
         observed = detect_ttc_events(metric(groups.get(source_type, [])), max_ttc_s=max_ttc_s)
         result["comparisons"][source_type] = event_match_counts(reference, observed)
     return result

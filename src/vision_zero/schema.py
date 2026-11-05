@@ -19,9 +19,6 @@ class TrackPoint:
     coordinate_system: str = "local_m"
     lat: float | None = None
     lon: float | None = None
-    min_ttc_s: float | None = None
-    min_pet_s: float | None = None
-    dominant_road_user_pair: str = "unknown pair"
 
 
 @dataclass(frozen=True)
@@ -66,3 +63,6 @@ class Hotspot:
     coverage_flags: tuple[str, ...] = ()
     lat: float | None = None
     lon: float | None = None
+    min_ttc_s: float | None = None
+    min_pet_s: float | None = None
+    dominant_road_user_pair: str = "unknown pair"

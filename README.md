@@ -24,6 +24,22 @@ streamlit run app/Home.py
 
 The sample tracks are synthetic and deterministic. Analysis writes one versioned bundle to `outputs/runs/<run_id>/` with tracks, events, hotspots, validation JSON, configuration, and HTML/PDF/Markdown report files. The dashboard reads those outputs and does not run SUMO or inference live.
 
+Run the regression tests with `python -m pytest tests` (needs `pip install pytest`).
+
+TTC events are collapsed to one event per encounter (the minimum-TTC sample of consecutive detections of the same pair; a new encounter starts after a 1 s gap). Pass `collapse=False` to `detect_ttc_events` for the raw per-timestep series.
+
+## Deploy the dashboard
+
+The hosted app is read-only: it displays the precomputed run(s) committed under `outputs/runs/<run_id>/` and never runs detection or SUMO. `requirements.txt` installs only the dashboard dependencies (no PyTorch, OpenCV or SUMO). Use `requirements-pipeline.txt` for the offline pipeline.
+
+**Streamlit Community Cloud:** new app, main file `app/Home.py`, Advanced settings -> Python 3.12.
+
+**Render:** push the repo and create a Blueprint from `render.yaml`, or create a Web Service manually with build command `pip install -r requirements.txt` and start command `streamlit run app/Home.py --server.port $PORT --server.address 0.0.0.0 --server.headless true`. Set `PYTHON_VERSION` to `3.12.3`. Free instances sleep when idle, so open the URL a few minutes before a demo.
+
+**Before you push:** add your final run folder under `outputs/runs/`, keep `evidence_raw/`, raw footage and `*.pt` weights out of git, and confirm everything in `evidence_safe/` is blurred or synthetic.
+
+**Detector run:** `finetune_spike.py` fine-tunes weights on rendered frames. Then run `vision-zero detect ... --weights <best.pt> --homography-json render_calibration.json` and `vision-zero analyze` to produce a detected-track run to commit alongside the ground-truth one.
+
 ## SUMO and OSM workflow
 
 Install Eclipse SUMO separately and make `sumo`, `netconvert`, and optionally `sumo-gui` available on `PATH`. Obtain a permitted local OSM XML/PBF extract for the selected intersection. SUMO builds the road network locally; no raw real-world video belongs in the repository.

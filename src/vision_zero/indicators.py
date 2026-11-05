@@ -12,8 +12,13 @@ def detect_ttc_events(
     horizon_s: float = 5.0,
     max_ttc_s: float = 3.0,
     minimum_sample_s: float = 0.05,
+    collapse: bool = True,
+    encounter_gap_s: float = 1.0,
 ) -> list[RiskEvent]:
     """Find pairs predicted to overlap within the horizon under constant velocity.
+
+    With ``collapse=True`` (default) consecutive per-timestep detections of the same
+    pair are merged into one event per encounter, keeping the minimum-TTC sample.
 
     Tracks are compared only at timestamps observed for both users. A pair with
     missing or very widely spaced observations is skipped rather than extrapolated.
@@ -87,7 +92,34 @@ def detect_ttc_events(
                     lat=((a.lat + b.lat) / 2 if a.lat is not None and b.lat is not None else None),
                     lon=((a.lon + b.lon) / 2 if a.lon is not None and b.lon is not None else None),
                 ))
-    return sorted(events, key=lambda event: event.timestamp_s)
+    events = sorted(events, key=lambda event: event.timestamp_s)
+    return collapse_encounters(events, gap_s=encounter_gap_s) if collapse else events
+
+
+def collapse_encounters(events: list[RiskEvent], *, gap_s: float = 1.0) -> list[RiskEvent]:
+    """Keep one event per encounter: the lowest-indicator sample of each run of
+    consecutive detections for the same source, pair and indicator.
+
+    A new encounter starts when the same pair is absent for more than ``gap_s``.
+    """
+    if gap_s <= 0:
+        raise ValueError("gap_s must be positive")
+    grouped: dict[tuple, list[RiskEvent]] = defaultdict(list)
+    for event in events:
+        key = (event.source_id, event.source_type, event.indicator_type,
+               event.road_user_a, event.road_user_b)
+        grouped[key].append(event)
+    kept: list[RiskEvent] = []
+    for group in grouped.values():
+        group.sort(key=lambda e: e.timestamp_s)
+        run = [group[0]]
+        for event in group[1:]:
+            if event.timestamp_s - run[-1].timestamp_s > gap_s:
+                kept.append(min(run, key=lambda e: (e.indicator_value_s, e.timestamp_s)))
+                run = []
+            run.append(event)
+        kept.append(min(run, key=lambda e: (e.indicator_value_s, e.timestamp_s)))
+    return sorted(kept, key=lambda e: (e.timestamp_s, e.indicator_type, e.event_id))
 
 
 def classify_conflict(group_a: str, group_b: str) -> str:

@@ -118,7 +118,7 @@ def detect_and_track(video_path: str | Path, weights: str | Path, *, source_id: 
                         source_id=source_id, timestamp_s=frame_index / fps,
                         track_id=str(int(track_id)), road_user_class=name,
                         x_m=x, y_m=y, confidence=float(box.conf.item()),
-                        radius_m=0.35 if name == "person" else 2.0,
+                        radius_m=0.35 if class_group(name) == "pedestrian" else 2.0,
                         quality_flags=tuple(flags), source_type=source_type,
                         class_group=class_group(name), coordinate_system=coordinate,
                     ))

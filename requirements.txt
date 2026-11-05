@@ -1,11 +1,11 @@
-numpy==2.2.3
-pandas==2.2.3
-pyarrow==19.0.1
-streamlit==1.42.0
-folium==0.19.4
-streamlit-folium==0.24.0
-plotly==6.0.0
-opencv-python-headless==4.11.0.86
-ultralytics==8.4.63
-sumolib==1.22.0
-reportlab==4.3.1
+# Runtime install for the hosted dashboard (Streamlit Community Cloud / Render).
+# Dashboard dependencies only: no PyTorch, Ultralytics, OpenCV or SUMO.
+# vision_zero itself is imported from ./src (see app/lib/__init__.py).
+# Lower bounds, not exact pins, so installs work on any Python version the host picks.
+streamlit>=1.42
+pandas>=2.2
+numpy>=2.0
+pyarrow>=19
+folium>=0.19
+streamlit-folium>=0.24
+plotly>=6

@@ -26,8 +26,9 @@ def main():
         writer.writeheader()
         writer.writerow({"source_id": "seeded_intersection_demo", "road_user_1": "ped_1",
                          "road_user_2": "veh_1", "indicator_type": "TTC", "expected_time_s": "4.5"})
+        # veh_2 closes on ped_1 at 1.2 m/s from 6 m; footprints (2.55 m) touch at ~2.9 s.
         writer.writerow({"source_id": "seeded_intersection_demo", "road_user_1": "ped_1",
-                         "road_user_2": "veh_2", "indicator_type": "TTC", "expected_time_s": "4.5"})
+                         "road_user_2": "veh_2", "indicator_type": "TTC", "expected_time_s": "2.9"})
     print(f"Wrote deterministic sample track CSV: {output}")
 
 

@@ -1,0 +1,3 @@
+source_id,road_user_1,road_user_2,indicator_type,expected_time_s
+seeded_intersection_demo,ped_1,veh_1,TTC,4.5
+seeded_intersection_demo,ped_1,veh_2,TTC,2.9

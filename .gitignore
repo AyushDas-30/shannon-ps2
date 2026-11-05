@@ -13,3 +13,15 @@ outputs/private/
 outputs/runs/*/evidence_raw/
 *.log
 /ps/Screenshot (553).png
+
+# Training / spike artifacts (regenerate with finetune_spike.py)
+/finetune_data/
+/finetune_runs/
+/runs/
+/spike_out/
+*.egg-info/
+.pytest_cache/
+
+# Keep the dashboard's pre-redacted evidence deployable
+!outputs/runs/*/evidence_safe/
+!outputs/runs/*/evidence_safe/*.mp4

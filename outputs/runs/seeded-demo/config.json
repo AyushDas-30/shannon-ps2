@@ -1,0 +1,27 @@
+{
+  "run_id": "seeded-demo",
+  "source_type": "sumo_gt",
+  "observation_duration_s": 20.0,
+  "track_observations": 404,
+  "track_count": 4,
+  "max_ttc_s": 3.0,
+  "max_pet_s": 2.0,
+  "cell_size_m": 25.0,
+  "method_note": "Candidate screening from precomputed tracks; metric outputs require shared road-plane coordinates.",
+  "thresholds": {
+    "ttc_s": 3.0,
+    "pet_s": 2.0,
+    "drac_mps2": 3.0
+  },
+  "threshold_sources": [
+    {
+      "name": "SUMO SSM default thresholds",
+      "url": "https://sumo.dlr.de/docs/Simulation/Output/SSM_Device.html",
+      "values": [
+        "TTC < 3 s",
+        "PET < 2 s",
+        "DRAC > 3 m/s\u00b2"
+      ]
+    }
+  ]
+}
