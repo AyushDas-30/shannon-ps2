@@ -1,0 +1,40 @@
+<?xml version='1.0' encoding='utf-8'?>
+<routes>
+  <vType id="car" vClass="passenger" length="4.5" width="1.8" maxSpeed="13.9" accel="2.6" decel="4.5" />
+  <vType id="bike" vClass="bicycle" length="1.8" width="0.6" maxSpeed="7.0" accel="1.5" decel="3.0" />
+  <vType id="car_seeded" vClass="passenger" length="4.5" width="1.8" maxSpeed="13.9" accel="2.6" decel="4.5" jmIgnoreFoeProb="1" jmIgnoreFoeSpeed="5" />
+  <vType id="ped_seeded" vClass="pedestrian" jmCrossingGap="0" />
+  <route id="veh_straight_EW" edges="236357607#3 236357607#4 236357607#5" />
+  <route id="veh_turn_E_to_S" edges="236357607#3 236357607#4 236357611#2" />
+  <route id="ped_cross_EW_road" edges="236357611#1 236357611#2" />
+  <vehicle id="veh_000" type="car" route="veh_straight_EW" depart="0.45" departLane="best" departSpeed="max" />
+  <vehicle id="veh_004" type="car" route="veh_straight_EW" depart="0.54" departLane="best" departSpeed="max" />
+  <vehicle id="veh_014" type="car" route="veh_turn_E_to_S" depart="1.74" departLane="best" departSpeed="max" />
+  <vehicle id="veh_013" type="car" route="veh_turn_E_to_S" depart="1.84" departLane="best" departSpeed="max" />
+  <vehicle id="veh_007" type="car" route="veh_turn_E_to_S" depart="3.97" departLane="best" departSpeed="max" />
+  <vehicle id="veh_005" type="car" route="veh_straight_EW" depart="4.19" departLane="best" departSpeed="max" />
+  <vehicle id="veh_001" type="car" route="veh_turn_E_to_S" depart="4.41" departLane="best" departSpeed="max" />
+  <vehicle id="veh_011" type="car" route="veh_turn_E_to_S" depart="5.00" departLane="best" departSpeed="max" />
+  <vehicle id="veh_006" type="car" route="veh_straight_EW" depart="10.10" departLane="best" departSpeed="max" />
+  <vehicle id="veh_003" type="car" route="veh_straight_EW" depart="10.63" departLane="best" departSpeed="max" />
+  <vehicle id="veh_015" type="car" route="veh_turn_E_to_S" depart="10.87" departLane="best" departSpeed="max" />
+  <vehicle id="veh_010" type="car" route="veh_straight_EW" depart="12.57" departLane="best" departSpeed="max" />
+  <vehicle id="veh_016" type="car" route="veh_straight_EW" depart="13.14" departLane="best" departSpeed="max" />
+  <vehicle id="veh_002" type="car" route="veh_straight_EW" depart="13.26" departLane="best" departSpeed="max" />
+  <vehicle id="veh_009" type="car" route="veh_straight_EW" depart="13.66" departLane="best" departSpeed="max" />
+  <vehicle id="veh_008" type="car" route="veh_turn_E_to_S" depart="14.57" departLane="best" departSpeed="max" />
+  <vehicle id="veh_012" type="car" route="veh_straight_EW" depart="17.23" departLane="best" departSpeed="max" />
+  <vehicle id="veh_017" type="car" route="veh_straight_EW" depart="17.52" departLane="best" departSpeed="max" />
+  <person id="ped_003" depart="67.91" type="DEFAULT_PEDTYPE">
+    <walk route="ped_cross_EW_road" speed="1.4" />
+  </person>
+  <person id="ped_000" depart="70.91" type="DEFAULT_PEDTYPE">
+    <walk route="ped_cross_EW_road" speed="1.4" />
+  </person>
+  <person id="ped_002" depart="72.70" type="DEFAULT_PEDTYPE">
+    <walk route="ped_cross_EW_road" speed="1.4" />
+  </person>
+  <person id="ped_001" depart="74.96" type="DEFAULT_PEDTYPE">
+    <walk route="ped_cross_EW_road" speed="1.4" />
+  </person>
+</routes>

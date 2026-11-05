@@ -1,0 +1,2 @@
+cell_x,cell_y,event_count,observed_road_users,observation_minutes,rate_per_1000,rate_ci_low,rate_ci_high,minimum_indicator_s,min_ttc_s,min_pet_s,dominant_conflict_type,dominant_road_user_pair,event_types,coverage_flags,lat,lon
+29,18,2,22,1.63,90.9090909090909,0.0,216.902662829603,1.0065357215662942,1.0065357215662942,,vehicle_pedestrian_crossing,pedestrian / car,TTC,,,

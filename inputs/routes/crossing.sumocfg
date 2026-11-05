@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='utf-8'?>
+<configuration>
+  <input>
+    <net-file value="/home/claude/repo/shannon-ps2-main/network.net.xml" />
+    <route-files value="/home/claude/repo/shannon-ps2-main/inputs/routes/crossing.rou.xml" />
+  </input>
+  <time>
+    <begin value="0.0" />
+    <end value="180.0" />
+    <step-length value="0.2" />
+  </time>
+  <processing>
+    <time-to-teleport value="-1" />
+  </processing>
+</configuration>

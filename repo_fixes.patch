@@ -1,0 +1,241 @@
+diff --git a/.gitignore b/.gitignore
+index 34bb6d9..cf2085a 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -25,3 +25,8 @@ outputs/runs/*/evidence_raw/
+ # Keep the dashboard's pre-redacted evidence deployable
+ !outputs/runs/*/evidence_safe/
+ !outputs/runs/*/evidence_safe/*.mp4
++
++# Local inputs and large model files (do not commit)
++/inputs/private/
++/inputs/models/*.weights
++*.weights
+diff --git a/pyproject.toml b/pyproject.toml
+index 803f2a9..97fabca 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -23,6 +23,7 @@ pipeline = [
+   "opencv-python-headless==4.11.0.86",
+   "ultralytics==8.4.63",
+   "sumolib==1.22.0",
++  "pyproj",
+   "reportlab==4.3.1",
+ ]
+ 
+diff --git a/pb/src/vision_zero/opencv_backend.py b/src/vision_zero/opencv_backend.py
+new file mode 100644
+index 0000000..c886ebf
+--- /dev/null
++++ b/src/vision_zero/opencv_backend.py
+@@ -0,0 +1,70 @@
++"""PyTorch-free detector/tracker fallback: Darknet YOLO via OpenCV DNN + IoU tracker.
++
++Used by ``detect_and_track`` when ``weights`` is a Darknet ``.weights`` file (a matching
++``.cfg`` and ``coco.names`` must sit beside it). Produces the same box rows as the
++Ultralytics path. Tracking is greedy IoU association with a short coast period; it is
++simpler than ByteTrack and will fragment tracks more on crowded or tiny targets.
++"""
++
++from pathlib import Path
++
++import numpy as np
++
++ROAD_USER_CLASSES = {"person", "bicycle", "car", "motorbike", "bus", "truck"}
++
++
++def _iou(a, b) -> float:
++    ix1, iy1, ix2, iy2 = max(a[0], b[0]), max(a[1], b[1]), min(a[2], b[2]), min(a[3], b[3])
++    inter = max(0.0, ix2 - ix1) * max(0.0, iy2 - iy1)
++    union = (a[2] - a[0]) * (a[3] - a[1]) + (b[2] - b[0]) * (b[3] - b[1]) - inter
++    return inter / union if union > 0 else 0.0
++
++
++class DarknetTracker:
++    def __init__(self, weights: str | Path, *, conf: float = 0.25, input_size=(608, 352),
++                 nms: float = 0.45, iou_min: float = 0.15, max_age: int = 6):
++        import cv2
++        weights = Path(weights)
++        cfg = weights.with_suffix(".cfg")
++        names = weights.parent / "coco.names"
++        if not cfg.exists() or not names.exists():
++            raise FileNotFoundError(f"Need {cfg.name} and coco.names next to {weights.name}")
++        self.names = [n.strip() for n in names.read_text().splitlines() if n.strip()]
++        net = cv2.dnn.readNetFromDarknet(str(cfg), str(weights))
++        self.model = cv2.dnn_DetectionModel(net)
++        self.model.setInputParams(scale=1 / 255, size=input_size, swapRB=True)
++        self.conf, self.nms, self.iou_min, self.max_age = conf, nms, iou_min, max_age
++        self.tracks: dict[int, dict] = {}
++        self.next_id = 1
++
++    def update(self, frame) -> list[dict]:
++        """Return [{xyxy, name, conf, id}] for the current frame."""
++        classes, scores, boxes = self.model.detect(frame, self.conf, self.nms)
++        dets = []
++        for cid, score, (x, y, w, h) in zip(np.array(classes).flatten(), np.array(scores).flatten(), boxes):
++            name = self.names[int(cid)]
++            if name in ROAD_USER_CLASSES:
++                dets.append({"xyxy": (float(x), float(y), float(x + w), float(y + h)),
++                             "name": "motorcycle" if name == "motorbike" else name, "conf": float(score)})
++        pairs = sorted(((_iou(t["xyxy"], d["xyxy"]), tid, i)
++                        for tid, t in self.tracks.items() for i, d in enumerate(dets)), reverse=True)
++        used_t, used_d = set(), set()
++        for iou, tid, i in pairs:
++            if iou < self.iou_min:
++                break
++            if tid in used_t or i in used_d:
++                continue
++            used_t.add(tid); used_d.add(i)
++            self.tracks[tid].update(xyxy=dets[i]["xyxy"], age=0, name=dets[i]["name"])
++            dets[i]["id"] = tid
++        for i, d in enumerate(dets):
++            if i not in used_d:
++                d["id"] = self.next_id
++                self.tracks[self.next_id] = {"xyxy": d["xyxy"], "age": 0, "name": d["name"]}
++                self.next_id += 1
++        for tid in list(self.tracks):
++            if tid not in used_t and tid not in {d["id"] for d in dets}:
++                self.tracks[tid]["age"] += 1
++                if self.tracks[tid]["age"] > self.max_age:
++                    del self.tracks[tid]
++        return dets
+diff --git a/src/vision_zero/scenario.py b/src/vision_zero/scenario.py
+index a3bf5f6..043db7f 100644
+--- a/src/vision_zero/scenario.py
++++ b/src/vision_zero/scenario.py
+@@ -35,6 +35,14 @@ def generate_seeded_routes(
+         "id": "bike", "vClass": "bicycle", "length": "1.8", "width": "0.6",
+         "maxSpeed": "7.0", "accel": "1.5", "decel": "3.0",
+     })
++    # Seeded-conflict actors: a pedestrian that accepts any gap and a driver that
++    # ignores slow foes, so the deliberate near-miss is not resolved by yielding.
++    ET.SubElement(root, "vType", {
++        "id": "car_seeded", "vClass": "passenger", "length": "4.5", "width": "1.8",
++        "maxSpeed": "13.9", "accel": "2.6", "decel": "4.5",
++        "jmIgnoreFoeProb": "1", "jmIgnoreFoeSpeed": "5",
++    })
++    ET.SubElement(root, "vType", {"id": "ped_seeded", "vClass": "pedestrian", "jmCrossingGap": "0"})
+     for path_id, edges in {**vehicle_paths, **pedestrian_paths}.items():
+         ET.SubElement(root, "route", {"id": path_id, "edges": " ".join(edges)})
+     all_vehicles = list(vehicle_paths)
+@@ -47,7 +55,10 @@ def generate_seeded_routes(
+             depart = max(0.0, rng.gauss(duration_s * 0.45, duration_s * 0.18))
+         if conflict_mode in {"crossing", "turning", "bike_cut_across"} and index == 0:
+             depart = duration_s * 0.47
+-        vehicle_type = "bike" if conflict_mode == "bike_cut_across" and index % 4 == 0 else "car"
++        vehicle_type = "car_seeded" if index == 0 and conflict_mode != "control" else "car"
++        if conflict_mode == "bike_cut_across" and index % 4 == 0:
++            vehicle_type = "bike"
++        _unused = "bike" if conflict_mode == "bike_cut_across" and index % 4 == 0 else "car"
+         ET.SubElement(root, "vehicle", {
+             "id": f"veh_{index:03d}", "type": vehicle_type, "route": route_id,
+             "depart": f"{min(depart, duration_s - 1):.2f}", "departLane": "best",
+@@ -59,11 +70,19 @@ def generate_seeded_routes(
+         if conflict_mode == "control":
+             depart = rng.uniform(duration_s * 0.75, duration_s * 0.85)
+         else:
+-            depart = duration_s * 0.47 if index == 0 else rng.uniform(0, duration_s * 0.8)
++            depart = duration_s * 0.47 - 10.0 if index == 0 else rng.uniform(0, duration_s * 0.8)
+         person = ET.SubElement(root, "person", {
+-            "id": f"ped_{index:03d}", "depart": f"{depart:.2f}", "type": "DEFAULT_PEDTYPE"
++            "id": f"ped_{index:03d}", "depart": f"{depart:.2f}", "type": "ped_seeded" if index == 0 and conflict_mode != "control" else "DEFAULT_PEDTYPE"
+         })
+-        ET.SubElement(person, "walk", {"route": rng.choice(ped_paths), "duration": "20"})
++        if index == 0 and conflict_mode != "control":
++            person.set("departPos", "60")  # start 15 m before the crossing on a 75 m approach
++        ET.SubElement(person, "walk", {"route": rng.choice(ped_paths), "speed": "1.4"})
++    # SUMO requires vehicles and persons to appear in departure-time order.
++    movers = [e for e in root if e.tag in {"vehicle", "person"}]
++    for e in movers:
++        root.remove(e)
++    for e in sorted(movers, key=lambda e: float(e.get("depart"))):
++        root.append(e)
+     ET.indent(root)
+     path = Path(output_path)
+     path.parent.mkdir(parents=True, exist_ok=True)
+diff --git a/src/vision_zero/sumo.py b/src/vision_zero/sumo.py
+index 59bae8e..e8c3a24 100644
+--- a/src/vision_zero/sumo.py
++++ b/src/vision_zero/sumo.py
+@@ -37,7 +37,7 @@ def write_sumocfg(network: str | Path, routes: str | Path, output_cfg: str | Pat
+ 
+ 
+ def run_sumo(sumocfg: str | Path, out_dir: str | Path, *, gui: bool = False) -> dict[str, str]:
+-    out = Path(out_dir)
++    out = Path(out_dir).resolve()
+     out.mkdir(parents=True, exist_ok=True)
+     exe = require_sumo("sumo-gui" if gui else "sumo")
+     fcd, ssm = out / "fcd.xml", out / "ssm.xml"
+@@ -72,6 +72,8 @@ def read_fcd(path: str | Path, *, source_id: str, source_type: str = "sumo_gt",
+             actor_id = actor.attrib.get("id", "")
+             road_class = "pedestrian" if actor.tag == "person" else actor.attrib.get("type", "vehicle")
+             road_class = road_class.lower()
++            if class_group(road_class) == "other road user" and class_group(road_class.split("_")[0]) != "other road user":
++                road_class = road_class.split("_")[0]  # e.g. car_seeded -> car
+             x, y = float(actor.attrib["x"]), float(actor.attrib["y"])
+             flags = []
+             lat = lon = None
+diff --git a/src/vision_zero/vision.py b/src/vision_zero/vision.py
+index 07676b1..c173c5e 100644
+--- a/src/vision_zero/vision.py
++++ b/src/vision_zero/vision.py
+@@ -59,12 +59,17 @@ def detect_and_track(video_path: str | Path, weights: str | Path, *, source_id:
+                      synthetic_evidence_output: str | Path | None = None,
+                      predictions_csv: str | Path | None = None) -> list[TrackPoint]:
+     """Run YOLO tracking. Pixel coordinates remain non-metric without homography."""
++    use_darknet = str(weights).lower().endswith(".weights")
+     try:
+         import cv2
+-        from ultralytics import YOLO
++        if use_darknet:
++            from .opencv_backend import DarknetTracker
++            model = DarknetTracker(weights, conf=confidence)
++        else:
++            from ultralytics import YOLO
++            model = YOLO(str(weights))
+     except ImportError as exc:
+         raise RuntimeError("Install requirements.txt to use detector/tracker integration") from exc
+-    model = YOLO(str(weights))
+     capture = cv2.VideoCapture(str(video_path))
+     if not capture.isOpened():
+         raise ValueError(f"Unable to open video: {video_path}")
+@@ -89,16 +94,22 @@ def detect_and_track(video_path: str | Path, weights: str | Path, *, source_id:
+             if frame_index % sample_every:
+                 frame_index += 1
+                 continue
+-            result = model.track(frame, persist=True, tracker="bytetrack.yaml", conf=confidence, verbose=False)[0]
+-            boxes = result.boxes
+             annotated = frame.copy() if evidence_writer is not None else None
+-            if boxes is not None and boxes.id is not None:
+-                for box, track_id in zip(boxes, boxes.id.tolist()):
+-                    cls_id = int(box.cls.item())
+-                    name = str(model.names.get(cls_id, "other road user")).lower()
+-                    x1, y1, x2, y2 = map(float, box.xyxy[0].tolist())
++            if use_darknet:
++                detections = [(d["xyxy"], d["name"], d["conf"], d["id"]) for d in model.update(frame)]
++            else:
++                result = model.track(frame, persist=True, tracker="bytetrack.yaml", conf=confidence, verbose=False)[0]
++                boxes = result.boxes
++                detections = []
++                if boxes is not None and boxes.id is not None:
++                    for box, tid in zip(boxes, boxes.id.tolist()):
++                        detections.append((tuple(map(float, box.xyxy[0].tolist())),
++                                           str(model.names.get(int(box.cls.item()), "other road user")).lower(),
++                                           float(box.conf.item()), tid))
++            if detections:
++                for (x1, y1, x2, y2), name, conf_value, track_id in detections:
+                     box_rows.append({"frame_id": frame_index, "class": name, "x1": x1, "y1": y1,
+-                                     "x2": x2, "y2": y2, "confidence": float(box.conf.item()),
++                                     "x2": x2, "y2": y2, "confidence": conf_value,
+                                      "track_id": int(track_id)})
+                     x, y = (x1 + x2) / 2, y2
+                     flags = []
+@@ -117,7 +128,7 @@ def detect_and_track(video_path: str | Path, weights: str | Path, *, source_id:
+                     points.append(TrackPoint(
+                         source_id=source_id, timestamp_s=frame_index / fps,
+                         track_id=str(int(track_id)), road_user_class=name,
+-                        x_m=x, y_m=y, confidence=float(box.conf.item()),
++                        x_m=x, y_m=y, confidence=conf_value,
+                         radius_m=0.35 if class_group(name) == "pedestrian" else 2.0,
+                         quality_flags=tuple(flags), source_type=source_type,
+                         class_group=class_group(name), coordinate_system=coordinate,

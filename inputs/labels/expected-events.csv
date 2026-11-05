@@ -1,0 +1,2 @@
+source_id,road_user_1,road_user_2,indicator_type,expected_time_s
+sumo-crossing-42,ped_000,veh_000,TTC,47.8

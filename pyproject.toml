@@ -23,6 +23,7 @@ pipeline = [
   "opencv-python-headless==4.11.0.86",
   "ultralytics==8.4.63",
   "sumolib==1.22.0",
+  "pyproj",
   "reportlab==4.3.1",
 ]
 

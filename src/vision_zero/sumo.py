@@ -37,7 +37,7 @@ def write_sumocfg(network: str | Path, routes: str | Path, output_cfg: str | Pat
 
 
 def run_sumo(sumocfg: str | Path, out_dir: str | Path, *, gui: bool = False) -> dict[str, str]:
-    out = Path(out_dir)
+    out = Path(out_dir).resolve()
     out.mkdir(parents=True, exist_ok=True)
     exe = require_sumo("sumo-gui" if gui else "sumo")
     fcd, ssm = out / "fcd.xml", out / "ssm.xml"
@@ -72,6 +72,8 @@ def read_fcd(path: str | Path, *, source_id: str, source_type: str = "sumo_gt",
             actor_id = actor.attrib.get("id", "")
             road_class = "pedestrian" if actor.tag == "person" else actor.attrib.get("type", "vehicle")
             road_class = road_class.lower()
+            if class_group(road_class) == "other road user" and class_group(road_class.split("_")[0]) != "other road user":
+                road_class = road_class.split("_")[0]  # e.g. car_seeded -> car
             x, y = float(actor.attrib["x"]), float(actor.attrib["y"])
             flags = []
             lat = lon = None

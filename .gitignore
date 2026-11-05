@@ -25,3 +25,8 @@ outputs/runs/*/evidence_raw/
 # Keep the dashboard's pre-redacted evidence deployable
 !outputs/runs/*/evidence_safe/
 !outputs/runs/*/evidence_safe/*.mp4
+
+# Local inputs and large model files (do not commit)
+/inputs/private/
+/inputs/models/*.weights
+*.weights

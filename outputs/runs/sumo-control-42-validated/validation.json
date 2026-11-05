@@ -1,0 +1,73 @@
+{
+  "source_comparison": {
+    "ground_truth_event_count": 3,
+    "comparisons": {}
+  },
+  "threshold_sensitivity": {
+    "0.7x": {
+      "threshold_s": 2.0999999999999996,
+      "event_count": 1,
+      "hotspot_ranking": [
+        "29,18"
+      ],
+      "hotspot_counts": {
+        "29,18": 1
+      }
+    },
+    "0.8x": {
+      "threshold_s": 2.4000000000000004,
+      "event_count": 1,
+      "hotspot_ranking": [
+        "29,18"
+      ],
+      "hotspot_counts": {
+        "29,18": 1
+      }
+    },
+    "1.0x": {
+      "threshold_s": 3.0,
+      "event_count": 3,
+      "hotspot_ranking": [
+        "29,18"
+      ],
+      "hotspot_counts": {
+        "29,18": 3
+      }
+    },
+    "1.2x": {
+      "threshold_s": 3.5999999999999996,
+      "event_count": 3,
+      "hotspot_ranking": [
+        "29,18"
+      ],
+      "hotspot_counts": {
+        "29,18": 3
+      }
+    },
+    "1.3x": {
+      "threshold_s": 3.9000000000000004,
+      "event_count": 3,
+      "hotspot_ranking": [
+        "29,18"
+      ],
+      "hotspot_counts": {
+        "29,18": 3
+      }
+    }
+  },
+  "ssm_comparison": {
+    "ssm_encounters": 0,
+    "matched_events": {
+      "TTC": 0,
+      "PET": 0
+    },
+    "mean_absolute_error_s": {
+      "TTC": null,
+      "PET": null
+    }
+  },
+  "ssm_reference_rows": 0,
+  "detection_metrics": {},
+  "seeded_scenarios": {},
+  "quality_banner": "Some tracks have quality flags; review them before interpreting event rankings."
+}

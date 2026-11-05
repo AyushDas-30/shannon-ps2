@@ -59,12 +59,17 @@ def detect_and_track(video_path: str | Path, weights: str | Path, *, source_id: 
                      synthetic_evidence_output: str | Path | None = None,
                      predictions_csv: str | Path | None = None) -> list[TrackPoint]:
     """Run YOLO tracking. Pixel coordinates remain non-metric without homography."""
+    use_darknet = str(weights).lower().endswith(".weights")
     try:
         import cv2
-        from ultralytics import YOLO
+        if use_darknet:
+            from .opencv_backend import DarknetTracker
+            model = DarknetTracker(weights, conf=confidence)
+        else:
+            from ultralytics import YOLO
+            model = YOLO(str(weights))
     except ImportError as exc:
         raise RuntimeError("Install requirements.txt to use detector/tracker integration") from exc
-    model = YOLO(str(weights))
     capture = cv2.VideoCapture(str(video_path))
     if not capture.isOpened():
         raise ValueError(f"Unable to open video: {video_path}")
@@ -89,16 +94,22 @@ def detect_and_track(video_path: str | Path, weights: str | Path, *, source_id: 
             if frame_index % sample_every:
                 frame_index += 1
                 continue
-            result = model.track(frame, persist=True, tracker="bytetrack.yaml", conf=confidence, verbose=False)[0]
-            boxes = result.boxes
             annotated = frame.copy() if evidence_writer is not None else None
-            if boxes is not None and boxes.id is not None:
-                for box, track_id in zip(boxes, boxes.id.tolist()):
-                    cls_id = int(box.cls.item())
-                    name = str(model.names.get(cls_id, "other road user")).lower()
-                    x1, y1, x2, y2 = map(float, box.xyxy[0].tolist())
+            if use_darknet:
+                detections = [(d["xyxy"], d["name"], d["conf"], d["id"]) for d in model.update(frame)]
+            else:
+                result = model.track(frame, persist=True, tracker="bytetrack.yaml", conf=confidence, verbose=False)[0]
+                boxes = result.boxes
+                detections = []
+                if boxes is not None and boxes.id is not None:
+                    for box, tid in zip(boxes, boxes.id.tolist()):
+                        detections.append((tuple(map(float, box.xyxy[0].tolist())),
+                                           str(model.names.get(int(box.cls.item()), "other road user")).lower(),
+                                           float(box.conf.item()), tid))
+            if detections:
+                for (x1, y1, x2, y2), name, conf_value, track_id in detections:
                     box_rows.append({"frame_id": frame_index, "class": name, "x1": x1, "y1": y1,
-                                     "x2": x2, "y2": y2, "confidence": float(box.conf.item()),
+                                     "x2": x2, "y2": y2, "confidence": conf_value,
                                      "track_id": int(track_id)})
                     x, y = (x1 + x2) / 2, y2
                     flags = []
@@ -117,7 +128,7 @@ def detect_and_track(video_path: str | Path, weights: str | Path, *, source_id: 
                     points.append(TrackPoint(
                         source_id=source_id, timestamp_s=frame_index / fps,
                         track_id=str(int(track_id)), road_user_class=name,
-                        x_m=x, y_m=y, confidence=float(box.conf.item()),
+                        x_m=x, y_m=y, confidence=conf_value,
                         radius_m=0.35 if class_group(name) == "pedestrian" else 2.0,
                         quality_flags=tuple(flags), source_type=source_type,
                         class_group=class_group(name), coordinate_system=coordinate,

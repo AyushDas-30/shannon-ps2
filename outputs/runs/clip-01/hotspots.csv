@@ -1,0 +1,1 @@
+cell_x,cell_y,event_count,observed_road_users,observation_minutes,rate_per_1000,rate_ci_low,rate_ci_high,minimum_indicator_s,min_ttc_s,min_pet_s,dominant_conflict_type,dominant_road_user_pair,event_types,coverage_flags,lat,lon

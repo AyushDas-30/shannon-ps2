@@ -1,0 +1,64 @@
+{
+  "source_comparison": {
+    "ground_truth_event_count": 0,
+    "comparisons": {
+      "video": {
+        "reference_events": 0,
+        "candidate_events": 0,
+        "matched_events": 0,
+        "event_recall": null,
+        "spurious_events": 0,
+        "spurious_rate": 0.0,
+        "indicator_mae_s": null,
+        "match_tolerance_s": 1.0
+      }
+    }
+  },
+  "threshold_sensitivity": {
+    "0.7x": {
+      "threshold_s": 2.0999999999999996,
+      "event_count": 0,
+      "hotspot_ranking": [],
+      "hotspot_counts": {}
+    },
+    "0.8x": {
+      "threshold_s": 2.4000000000000004,
+      "event_count": 0,
+      "hotspot_ranking": [],
+      "hotspot_counts": {}
+    },
+    "1.0x": {
+      "threshold_s": 3.0,
+      "event_count": 0,
+      "hotspot_ranking": [],
+      "hotspot_counts": {}
+    },
+    "1.2x": {
+      "threshold_s": 3.5999999999999996,
+      "event_count": 0,
+      "hotspot_ranking": [],
+      "hotspot_counts": {}
+    },
+    "1.3x": {
+      "threshold_s": 3.9000000000000004,
+      "event_count": 0,
+      "hotspot_ranking": [],
+      "hotspot_counts": {}
+    }
+  },
+  "ssm_comparison": {
+    "ssm_encounters": 0,
+    "matched_events": {
+      "TTC": 0,
+      "PET": 0
+    },
+    "mean_absolute_error_s": {
+      "TTC": null,
+      "PET": null
+    }
+  },
+  "ssm_reference_rows": 0,
+  "detection_metrics": {},
+  "seeded_scenarios": {},
+  "quality_banner": "Pixel-only tracks: metric indicators and geographic hotspots are unavailable."
+}

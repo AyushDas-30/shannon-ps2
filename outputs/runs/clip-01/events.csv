@@ -1,0 +1,1 @@
+event_id,source_id,timestamp_s,road_user_a,class_a,road_user_b,class_b,conflict_type,indicator_type,indicator_value_s,secondary_indicator_value,severity_band,source_type,x_m,y_m,lat,lon,segment_id,ssm_reference_value,evidence_ref,min_separation_m,quality_flags
